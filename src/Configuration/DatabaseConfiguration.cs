@@ -1,30 +1,42 @@
-﻿using DataAccessObject.SQLite.Configuration;
+﻿using System.Reflection;
 
 namespace DataAccessObject.SQLite;
 
-public interface IConfigurationProvider
-{
-
-}
-
-public interface IDatabaseConfiguration
-{
-
-}
-
 public sealed class DatabaseConfiguration
 {
-    public DatabaseConfiguration(DatabaseConfigurationExpression configurationExpression)
+
+    public string ConnectionString { get; private set; }
+    readonly Dictionary<Type, PropertyInfo[]> Tables = new();
+
+    public DatabaseConfiguration(string databasePath, Action<DatabaseConfiguration> configureTables)
     {
-        
+        ConnectionString = databasePath;
+        configureTables(this);
     }
 
-    public DatabaseConfiguration(string databasePath, Action<DatabaseConfigurationExpression> configure) : this(Build(configure)) { }
 
-    static DatabaseConfigurationExpression Build(Action<DatabaseConfigurationExpression> configure)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="TEntity"></typeparam>
+    public void RegisterTable<TEntity>()
     {
-        DatabaseConfigurationExpression expr = new();
-        configure(expr);
-        return expr;
+        var entityType = typeof(TEntity);
+
+        if (!Tables.ContainsKey(entityType) )
+        {
+            var tableProperties = entityType.GetProperties();
+            Tables.Add(entityType, tableProperties);
+        }
     }
+
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public Database CreateDatabase() => 
+        new Database(ConnectionString, this);
+
+
 }

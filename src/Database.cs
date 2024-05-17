@@ -6,12 +6,12 @@ public sealed class Database
 {
     internal SqliteConnection _Connection { get; set; }
 
-    private readonly IConfigurationProvider _configurationProvider;
+    private readonly DatabaseConfiguration _configuration;
 
-    public Database(string databasePath, IConfigurationProvider configuration)
+    public Database(string databasePath, DatabaseConfiguration configuration)
     {
         CarregarDatabase(databasePath);
-        _configurationProvider = configuration;
+        _configuration = configuration;
     }
 
     protected void CarregarDatabase(string databasePath)
