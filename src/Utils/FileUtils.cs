@@ -6,7 +6,7 @@ public sealed class FileUtils
 {
     public static void CopyFromResouceIfNotExists(Type type, string resourceName, string destinationPath)
     {
-        if ( !FileExists(destinationPath) )
+        if ( !File.Exists(destinationPath) )
         {
             Assembly defaultAssembly = type.GetTypeInfo().Assembly;
             var pathAssembly = defaultAssembly.GetManifestResourceNames().FirstOrDefault(x => x.EndsWith(resourceName));
@@ -27,12 +27,5 @@ public sealed class FileUtils
                 }
             }
         }
-    }
-
-    public static bool FileExists(string filePath)
-    {
-        if ( File.Exists(filePath) )
-            return true;
-        return false;
     }
 }
