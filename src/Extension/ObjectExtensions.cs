@@ -84,7 +84,7 @@ public static class ObjectExtensions
             case "datetime":
                 return "DATETIME";
             case "guid":
-                return "UNIQUEIDENTIFIER";
+                return "BLOB";
             default:
                 throw new ArgumentException($"Tipo de dados C# não suportado: {type.Name}");
         }

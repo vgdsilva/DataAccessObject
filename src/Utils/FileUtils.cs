@@ -1,9 +1,10 @@
 ﻿using System.Reflection;
 
 namespace DataAccessObject.SQLite.Utils;
+
 public sealed class FileUtils
 {
-    public static void CopyResourceMobileIfNotExists(Type type, string resourceName, string destinationPath)
+    public static void CopyFromResouceIfNotExists(Type type, string resourceName, string destinationPath)
     {
         if ( !FileExists(destinationPath) )
         {

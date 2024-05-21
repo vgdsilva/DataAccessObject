@@ -2,6 +2,7 @@
 using Microsoft.Data.Sqlite;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
 using System.Reflection;
 
 namespace DataAccessObject.SQLite;
@@ -43,7 +44,7 @@ public sealed class DatabaseConfiguration
         try
         {
             //CREATE DATABASE FILE
-            FileUtils.CopyResourceMobileIfNotExists(typeof(Database), databaseName, ConnectionString);
+            FileUtils.CopyFromResouceIfNotExists(typeof(Database), databaseName, ConnectionString);
 
             using ( var connection = new SqliteConnection("Data Source=" + ConnectionString) )
             {
@@ -51,18 +52,21 @@ public sealed class DatabaseConfiguration
                 {
                     connection.Open();
 
-                    var databaseExistinTables = GetDatabaseTables(connection);
-                    foreach ( var entityType in Tables.Keys )
+                    IEnumerable<string> listDatabaseTables = RecoversDatabaseTables(connection);
+                    IEnumerable<string> listExistingTables = Tables.Keys.Select(x => x.Name);
+
+                    IEnumerable<string> listMissingTables = listDatabaseTables.Except(listExistingTables);
+
+                    foreach ( var entityType in Tables.Keys.Where(x => !listMissingTables.Contains(x.Name)))
                     {
                         var tableName = entityType.Name;
-                        if ( !databaseExistinTables.Contains(tableName) )
+                        if ( !listDatabaseTables.Contains(tableName) )
                         {
-                            //Create table
+                            //THE TABLE DOES NOT EXIST IN THE DATABASE SO THE CREATE COMMAND WILL BE EXECUTED
                             CreatTable(entityType, connection);
                             continue;
                         }
 
-                        var tableProperties = GetTableProperties(connection, tableName);
                     }
 
                     connection.Close();
@@ -76,59 +80,10 @@ public sealed class DatabaseConfiguration
         }
         catch ( Exception ex )
         {
-
+            Debug.WriteLine(ex);
             throw ex;
         }
 
-    }
-
-    PropertyInfo[] GetTableProperties(SqliteConnection connection, string tableName)
-    {
-        var properties = new List<PropertyInfo>();
-        string sql = $"SELECT name, type FROM sqlite_master JOIN pragma_table_info(name, '{tableName}') ON sqlite_master.name = pragma_table_info.name";
-
-        using (var command = new SqliteCommand(sql, connection))
-        {
-            using (var reader = command.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    var name = reader.GetString(0);
-                    var typeName = reader.GetString(1);
-                    var propertyType = GetPropertyTypeFromSqliteType(typeName);
-                }
-            }
-        }
-
-        return properties.ToArray();
-    }
-
-    Type GetPropertyTypeFromSqliteType(string sqliteType)
-    {
-        switch ( sqliteType.ToLower() )
-        {
-            case "integer":
-                return typeof(int);
-            case "bigint":
-                return typeof(long);
-            case "real":
-                return typeof(float);
-            case "numeric":
-            case "decimal":
-                return typeof(decimal);
-            case "text":
-            case "varchar":
-            case "nvarchar":
-                return typeof(string);
-            case "blob":
-                return typeof(byte[]);
-            case "boolean":
-                return typeof(bool);
-            case "datetime":
-                return typeof(DateTime);
-            default:
-                throw new ArgumentException($"Tipo de dados SQLite não suportado: {sqliteType}");
-        }
     }
 
     void CreatTable(Type entityType, SqliteConnection connection)
@@ -171,39 +126,12 @@ public sealed class DatabaseConfiguration
         }
     }
 
-    string GetSqliteTypeFromPropertyType(Type propertyType)
-    {
-        switch ( propertyType.Name.ToLower() )
-        {
-            case "int":
-            case "short":
-            case "byte":
-                return "INTEGER";
-            case "long":
-                return "BIGINT";
-            case "float":
-            case "double":
-                return "REAL";
-            case "decimal":
-                return "NUMERIC";
-            case "string":
-                return "TEXT";
-            case "bool":
-                return "BOOLEAN";
-            case "datetime":
-                return "DATETIME";
-            case "guid":
-                return "UNIQUEIDENTIFIER";
-            default:
-                throw new ArgumentException($"Tipo de dados C# não suportado: {propertyType.Name}");
-        }
-    }
-
-    List<string> GetDatabaseTables(SqliteConnection connection)
+    List<string> RecoversDatabaseTables(SqliteConnection connection)
     {
         var tables = new List<string>();
+        string sql = "SELECT NAME FROM SQLITE_MASTER WHERE TYPE = 'TABLE'";
 
-        using ( var command = new SqliteCommand("SELECT name FROM sqlite_master WHERE type = 'table'", connection) )
+        using ( var command = new SqliteCommand(sql, connection) )
         {
             using ( var reader = command.ExecuteReader() )
             {
