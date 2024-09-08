@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace DataAccessObject.SQLite
@@ -28,7 +29,7 @@ namespace DataAccessObject.SQLite
 
         public IEnumerable<T> Query<T>()
         {
-            throw new NotImplementedException();
+            return Enumerable.Empty<T>();
         }
     }
 }
