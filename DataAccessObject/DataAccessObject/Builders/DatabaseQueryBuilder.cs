@@ -27,12 +27,83 @@ namespace DataAccessObject.Builders
 
         internal class SelectQueryBuilder : DatabaseQueryBuilder
         {
-            public SelectQueryBuilder(Type tableType) : base(tableType) { }
+            private List<string> Fields { get; set; }
+            private string TableName { get; set; }
+            private List<string> Conditions { get; set; }
+            private List<string> Joins { get; set; }
+
+            public SelectQueryBuilder(Type tableType) : base(tableType)
+            {
+                Fields = new List<string>();
+                Conditions = new List<string>();
+                Joins = new List<string>();
+                TableName = tableType.Name; // Assuming tableType.Name is the table name. You might need a more sophisticated way to get the table name.
+            }
+
+            public SelectQueryBuilder AddField(string name, string tableFrom = null, string alias = null)
+            {
+                // Format the field with optional table and alias
+                Fields.Add(string.Format("{0}{1} AS {2}",
+                    string.IsNullOrEmpty(tableFrom) ? string.Empty : $"{tableFrom}.",
+                    name,
+                    string.IsNullOrEmpty(alias) ? name : alias));
+                return this;
+            }
+
+            public SelectQueryBuilder AddCondition(string condition)
+            {
+                Conditions.Add(condition);
+                return this;
+            }
+
+            public SelectQueryBuilder AddInnerJoin(string table, string alias, string tableFrom, string fieldFromTableFrom, string tableTo, string fieldFromTableTo)
+            {
+                Joins.Add(BuildJoinString("INNER", table, alias, tableFrom, fieldFromTableFrom, tableTo, fieldFromTableTo));
+                return this;
+            }
+
+            string BuildJoinString(string type, string table, string alias, string tableFrom, string fieldFromTableFrom, string tableTo, string fieldFromTableTo)
+            {
+                return string.Format("{0} JOIN {1} {2} ON {3}{4} = {5}{6}",
+                    type,
+                    table,
+                    string.IsNullOrEmpty(alias) ? table : alias,
+                    tableFrom,
+                    fieldFromTableFrom,
+                    tableTo,
+                    fieldFromTableTo);
+            }
 
             public override string GenerateSQL()
             {
+                if (Fields.Count == 0)
+                {
+                    throw new InvalidOperationException("No fields specified for SELECT query.");
+                }
+
                 StringBuilder sb = new StringBuilder();
 
+                // Build SELECT clause
+                sb.Append("SELECT ");
+                sb.Append(string.Join(", ", Fields));
+
+                // Build FROM clause
+                sb.AppendLine(" FROM ");
+                sb.Append(TableName);
+
+                // Build JOIN clauses
+                if (Joins.Count > 0)
+                {
+                    sb.AppendLine(" ");
+                    sb.Append(string.Join(" ", Joins));
+                }
+
+                // Build WHERE clause
+                if (Conditions.Count > 0)
+                {
+                    sb.AppendLine(" WHERE ");
+                    sb.Append(string.Join(" AND ", Conditions));
+                }
 
                 return sb.ToString();
             }
@@ -83,7 +154,6 @@ namespace DataAccessObject.Builders
             {
                 return $@"FOREIGN KEY ({columnName}) REFERENCES {referencedTable}({referencedColumn})";
             }
-
 
             public override string GenerateSQL()
             {

@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace DataAccessObject.PostgreSQL
 {
-    public class Database
+    public class Database : AbstractDatabase
     {
         public string ConnectionString { get; set; } = string.Empty;
 
@@ -16,6 +16,8 @@ namespace DataAccessObject.PostgreSQL
         {
             this.ConnectionString = ConnectionString;
         }
+
+
 
         public DataRowCollection GetItems(string sql, object[] parans = null)
         {
@@ -31,6 +33,25 @@ namespace DataAccessObject.PostgreSQL
             {
                 return oSQL.Query(SQL, objects).Rows[0];
             }
+        }
+
+        public override DataRow GetItem<T>(object id) where T : class
+        {
+            Type EntityType = typeof(T);
+
+
+            using (SQLQuery oSQL = new SQLQuery(ConnectionString))
+            {
+
+
+
+
+            }
+        }
+
+        public override T GetItems<T>()
+        {
+            throw new NotImplementedException();
         }
     }
 }
