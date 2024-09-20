@@ -25,6 +25,9 @@ namespace DataAccessObject.Builders
         public static DatabaseQueryBuilder Update(Type tableType) => new UpdateQueryBuilder(tableType);
 
 
+        /// <summary>
+        /// 
+        /// </summary>
         internal class SelectQueryBuilder : DatabaseQueryBuilder
         {
             private List<string> Fields { get; set; }
@@ -40,6 +43,13 @@ namespace DataAccessObject.Builders
                 TableName = tableType.Name; // Assuming tableType.Name is the table name. You might need a more sophisticated way to get the table name.
             }
 
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="tableFrom"></param>
+            /// <param name="alias"></param>
+            /// <returns></returns>
             public SelectQueryBuilder AddField(string name, string tableFrom = null, string alias = null)
             {
                 // Format the field with optional table and alias
@@ -50,28 +60,94 @@ namespace DataAccessObject.Builders
                 return this;
             }
 
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="condition"></param>
+            /// <returns></returns>
             public SelectQueryBuilder AddCondition(string condition)
             {
                 Conditions.Add(condition);
                 return this;
             }
 
-            public SelectQueryBuilder AddInnerJoin(string table, string alias, string tableFrom, string fieldFromTableFrom, string tableTo, string fieldFromTableTo)
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="junctionTable"></param>
+            /// <param name="alias"></param>
+            /// <param name="joinCondition"></param>
+            /// <returns></returns>
+            public SelectQueryBuilder AddInnerJoin(string junctionTable, string alias, string joinCondition)
             {
-                Joins.Add(BuildJoinString("INNER", table, alias, tableFrom, fieldFromTableFrom, tableTo, fieldFromTableTo));
+                var join = BuildJoinString("INNER", junctionTable, alias, joinCondition);
+                Joins.Add(join);
                 return this;
             }
 
-            string BuildJoinString(string type, string table, string alias, string tableFrom, string fieldFromTableFrom, string tableTo, string fieldFromTableTo)
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="junctionTable"></param>
+            /// <param name="alias"></param>
+            /// <param name="joinCondition"></param>
+            /// <returns></returns>
+            public SelectQueryBuilder AddLeftJoin(string junctionTable, string alias, string joinCondition)
             {
-                return string.Format("{0} JOIN {1} {2} ON {3}{4} = {5}{6}",
-                    type,
-                    table,
-                    string.IsNullOrEmpty(alias) ? table : alias,
-                    tableFrom,
-                    fieldFromTableFrom,
-                    tableTo,
-                    fieldFromTableTo);
+                var join = BuildJoinString("LEFT", junctionTable, alias, joinCondition);
+                Joins.Add(join);
+                return this;
+            }
+            
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="junctionTable"></param>
+            /// <param name="alias"></param>
+            /// <param name="joinCondition"></param>
+            /// <returns></returns>
+            public SelectQueryBuilder AddRightJoin(string junctionTable, string alias, string joinCondition)
+            {
+                var join = BuildJoinString("RIGHT", junctionTable, alias, joinCondition);
+                Joins.Add(join);
+                return this;
+            }
+            
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="junctionTable"></param>
+            /// <param name="alias"></param>
+            /// <param name="joinCondition"></param>
+            /// <returns></returns>
+            public SelectQueryBuilder AddFullJoin(string junctionTable, string alias, string joinCondition)
+            {
+                var join = BuildJoinString("FULL", junctionTable, alias, joinCondition);
+                Joins.Add(join);
+                return this;
+            }
+            
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="junctionTable"></param>
+            /// <param name="alias"></param>
+            /// <param name="joinCondition"></param>
+            /// <returns></returns>
+            public SelectQueryBuilder AddCrossJoin(string junctionTable, string alias, string joinCondition)
+            {
+                var join = BuildJoinString("CROSS", junctionTable, alias, joinCondition);
+                Joins.Add(join);
+                return this;
+            }
+
+            string BuildJoinString(string joinYype, string junctionTable, string alias, string joinCondition)
+            {
+                return string.Format("{0} JOIN {1} AS {2} ON {3}",
+                    joinYype,
+                    junctionTable,
+                    string.IsNullOrEmpty(alias) ? junctionTable : alias,
+                    joinCondition);
             }
 
             public override string GenerateSQL()

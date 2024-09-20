@@ -1,14 +1,12 @@
-﻿using DataAccessObject.Query;
-using Npgsql;
+﻿using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
-using System.Text;
 
 namespace DataAccessObject.PostgreSQL.Geral
 {
-    public class SQLQuery : ISQLQuery
+    public class SQLQuery 
     {
 
         NpgsqlConnection connection;
